@@ -1,10 +1,12 @@
 # I am having a lot of problem in the save section of the program as i failed in the integration of the sddweight function
 # Then I also faced a lot of problem while making a confirmation block at the centre of the screen  
+# To make the program faster you have to remove list and bring in numpy arrays
 
 import numpy as np
 import cv2
 from collections import deque
 import os
+import math as m 
 
 #default called trackbar function 
 def setValues(x):
@@ -191,27 +193,30 @@ def smart(frame, cen):
             if not(505 <= cen[0] <= 600 and 390 <= cen[1] <= 480) and PSEL == False :
                 SMART = False
                 STOP = False
-            elif (505 <= cen[0] <= 600 and 390 <= cen[1] <= 420):
-                PSEL = False
             elif (505 <= cen[0] <= 600 and 450 <= cen[1] <= 480):  
                 PSEL = False 
-            elif (505 <= cen[0] <= 600 and 420 <= cen[1] <= 450) or PSEL == True:
+            elif (505 <= cen[0] <= 600 and 390 <= cen[1] <= 450) or PSEL == True:
                 if c==0:
                     xrect = cen[0]
                     yrect = cen[1]
                     c=1
                     PSEL = True
+                    if cen[1] >= 450:
+                        return "rectangle"
+                    elif cen[1] >= 420:
+                        return "circle"
+                    
             
         else:
             if c== 1:
-                if c == 1:
-                    SMART = False
-                    RECT = True
-                else:
-                    SMART =True
+                SMART = False
+                RECT = True
+                print("fuvkoff")
+            else:
+                SMART =True
         
                 
-def rect(frame,cen):
+def rect(frame,cen, v):
     global RECT 
     global xmax
     global ymax
@@ -221,8 +226,13 @@ def rect(frame,cen):
     if cen != None:
         ymax = cen[1]
         xmax = cen[0]
-        f = cv2.rectangle(f,(xrect,yrect), (xmax, ymax), (255,255,255),2)
-        
+        if v == "rectangle":
+            cv2.rectangle(f,(xrect,yrect), (xmax, ymax), (255,255,255),2)
+        elif v == "circle":
+            radx = xmax - xrect
+            rady = ymax - yrect
+            rad = int(m.sqrt((radx*radx) + (rady*rady)))
+            cv2.circle(f, (xrect, yrect),rad,(255,255,255), 2 )
 
     if cen == None and (xmax!=None and ymax != None):
         RECT = False
@@ -256,9 +266,10 @@ SAVE = False
 SMART = False
 PSEL = False
 STOP = False
-rectangle = []
+shape = []
 colsize = 2
 blank = np.zeros((480,640,3))
+col = colors[0]
 
 # Loading the default webcam of PC.
 cap = cv2.VideoCapture(0)
@@ -405,23 +416,34 @@ while True:
                 cv2.line(frame, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
                 cv2.line(blank, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
                 col = colors[i]
-    for x in rectangle:
-        cv2.rectangle(frame, (x[0],x[1]),(x[2],x[3]), x[4], 2)
+    for x in shape:
+        if x[-1] == "rectangle":
+            cv2.rectangle(frame, (x[0],x[1]),(x[2],x[3]), x[4], 2)
+            print("fuckoff")
+        elif x[-1] == "circle":
+            radx = x[2] - x[0]
+            rady = x[3] - x[1]
+            rad = int(m.sqrt((radx*radx) + (rady*rady)))
+            cv2.circle(frame, (x[0], x[1]),rad, x[4], 2 )
+
     if SAVE is False:
         simg = frame.copy()
     colorlist(frame, center)
     colorsize(frame, center)
     save(frame, center)
-    smart(frame, center)
+    var = smart(frame, center)
+    if var != None:
+        v = var
     if center != None:
         cv2.circle(frame, (center[0], center[1]), 3, (120, 255, 255), 2)
     # Show all the windows
     if RECT is False:
         cv2.imshow("Tracking", frame)
     else:
-        rect(frame, center)
+        rect(frame, center, v)
         if DRAW is True:
-            rectangle.append([xrect, yrect, xmax, ymax, col]) 
+            print(var)
+            shape.append([xrect, yrect, xmax, ymax, col, v]) 
         draw()
     cv2.imshow("blank", blank)
     cv2.imshow("mask",Mask)
