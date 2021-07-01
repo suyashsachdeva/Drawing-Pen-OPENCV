@@ -13,6 +13,7 @@ global simg
 
 # Creating the trackbars needed for adjusting the marker colour
 cv2.namedWindow("Color detectors")
+cv2.resizeWindow("Color detectors",400, 280)
 cv2.createTrackbar("hue h", "Color detectors", 100, 180,setValues)
 cv2.createTrackbar("sat h", "Color detectors", 255, 255,setValues)
 cv2.createTrackbar("val h", "Color detectors", 255, 255,setValues)
@@ -99,9 +100,6 @@ def colorlist(frame, cen):
                 colorIndex = 7
             if not(160<cen[0]<255 and 0<cen[1]<305):
                 COLIST = False
-            
-        # else : 
-        #     COLIST = False
 
 def colorsize(frame, cen):
     global COSIZE
@@ -127,7 +125,7 @@ def colorsize(frame, cen):
             frame =cv2.circle(frame, (360, 170), 4, (0,0,0), -1 )
         elif colsize == 7 :
             frame =cv2.circle(frame, (360, 200), 4, (255,255,255), -1 )
-        
+
         if not(cen is None):
             if 275<cen[0]<370 and 65<cen[1]<95:
                 colsize = 1
@@ -157,36 +155,113 @@ def save(frame,cen):
         frame = cv2.rectangle(frame, (360,260), (420, 300), (0,0,255), -1)
         frame = cv2.rectangle(frame, (360,260), (420, 300), (0,0,0), 2)
         cv2.putText(frame, "NO", (380,285), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
-    if not(cen is None) and SAVE is True:
-        if 220 <= cen[0] <= 280 and 260 <= cen[1] <= 300:
-            cv2.imwrite("opencv finger.png", simg)
-            OLD = r"C:\Users\suyash\Desktop\KACHRA\laohub\opencv finger.png"
-            NEW = r"C:\Users\suyash\Desktop\Delete Me\opencv finger.png"
-            OLD = OLD.replace("\\","/")
-            NEW = NEW.replace("\\","/")
-            os.rename(OLD, NEW)
-            SAVE = False
+
+        if not(cen is None):
+            if 220 <= cen[0] <= 280 and 260 <= cen[1] <= 300:
+                cv2.imwrite("opencv finger.png", simg)
+                OLD = r"C:\Users\suyash\Desktop\KACHRA\laohub\opencv finger.png"
+                NEW = r"C:\Users\suyash\Desktop\Delete Me\opencv finger.png"
+                OLD = OLD.replace("\\","/")
+                NEW = NEW.replace("\\","/")
+                os.rename(OLD, NEW)
+                SAVE = False
             
-        if 360 <= cen[0] <= 420 and 260 <= cen[1] <= 300:
-            SAVE = False
+            elif 360 <= cen[0] <= 420 and 260 <= cen[1] <= 300:
+                SAVE = False
 
-def smart():
+def smart(frame, cen):
+    global xrect
+    global yrect
+    global RECT
     global SMART
-
+    global PSEL
+    SHAPE = ["Rectangle", "Circle"]
     if SMART == True:
-        # b = blank[:,66:450]
-        SMART = False
-        pass
+        global STOP
+        cv2.rectangle(frame, (505,450), (600, 390), (0,0,0), 2)
 
-# Loading the default webcam of PC.
-cap = cv2.VideoCapture(0)
+        for c in range(len(SHAPE)):
+            frame = cv2.line(frame, (505,450-(c*30)), (600,450 - (c*30)), (0,0,0), 2)
+            frame = cv2.rectangle(frame, (503,448 - (c*30)), (600,422 - (c*30)), colors[c], -1)
+            cv2.putText(frame,SHAPE[c] , (515, 435 - (c*30)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
 
+        #if cen[0]
+        if cen != None:
+            c=0
+            if not(505 <= cen[0] <= 600 and 390 <= cen[1] <= 480) and PSEL == False :
+                SMART = False
+                STOP = False
+            elif (505 <= cen[0] <= 600 and 390 <= cen[1] <= 420):
+                PSEL = False
+            elif (505 <= cen[0] <= 600 and 450 <= cen[1] <= 480):  
+                PSEL = False 
+            elif (505 <= cen[0] <= 600 and 420 <= cen[1] <= 450) or PSEL == True:
+                if c==0:
+                    xrect = cen[0]
+                    yrect = cen[1]
+                    c=1
+                    PSEL = True
+            
+        else:
+            if c== 1:
+                if c == 1:
+                    SMART = False
+                    RECT = True
+                else:
+                    SMART =True
+        
+                
+def rect(frame,cen):
+    global RECT 
+    global xmax
+    global ymax
+    global DRAW
+
+    f = frame.copy()
+    if cen != None:
+        ymax = cen[1]
+        xmax = cen[0]
+        f = cv2.rectangle(f,(xrect,yrect), (xmax, ymax), (255,255,255),2)
+        
+
+    if cen == None and (xmax!=None and ymax != None):
+        RECT = False
+        DRAW = True
+    cv2.imshow("Tracking", f)
+
+
+def draw():
+    global DRAW
+    global xrect
+    global yrect
+    global xmax
+    global ymax
+    global STOP
+    if DRAW is True:
+        DRAW = False
+        xrect = None
+        yrect = None
+        xmax = None
+        ymax =None
+        STOP = False
+        
+
+RECT = False
+DRAW = False
+ymax = None
+xmax = None
 COLIST = False
 COSIZE = False
 SAVE = False
 SMART = False
+PSEL = False
+STOP = False
+rectangle = []
 colsize = 2
 blank = np.zeros((480,640,3))
+
+# Loading the default webcam of PC.
+cap = cv2.VideoCapture(0)
 
 # Keep looping
 while True:
@@ -237,8 +312,7 @@ while True:
         cnt = sorted(cnts, key = cv2.contourArea, reverse = True)[0]
         # Get the radius of the enclosing circle around the found contour
         ((x, y), radius) = cv2.minEnclosingCircle(cnt)
-        # Draw the circle around the contour
-        cv2.circle(frame, (int(x), int(y)), 3, (120, 255, 255), 2)
+        
         # Calculating the center of the detected contour
         M = cv2.moments(cnt)
         center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']),colsize)
@@ -247,14 +321,14 @@ while True:
         # Now checking if the user wants to click on any button above the screen 
         if center[1] <= 65:
             if 40 <= center[0] <= 140 and SAVE is False: # Clear Button
-                bpoints = [deque(maxlen=512)]
-                gpoints = [deque(maxlen=512)]
-                rpoints = [deque(maxlen=512)]
-                ypoints = [deque(maxlen=512)]
-                spoints = [deque(maxlen=512)]
-                ppoints = [deque(maxlen=512)]
-                wpoints = [deque(maxlen=512)]
-                npoints = [deque(maxlen=512)]
+                bpoints = [deque(maxlen=1024)]
+                gpoints = [deque(maxlen=1024)]
+                rpoints = [deque(maxlen=1024)]
+                ypoints = [deque(maxlen=1024)]
+                spoints = [deque(maxlen=1024)]
+                ppoints = [deque(maxlen=1024)]
+                wpoints = [deque(maxlen=1024)]
+                npoints = [deque(maxlen=1024)]
 
                 blue_index = 0
                 green_index = 0
@@ -281,11 +355,10 @@ while True:
                     SAVE = True
         elif center[1]>449:
             if 505<=center[0]<=600:
-                SMART = True
-                #print("Entered the arena") 
-                smart() 
+                SMART = True  
+                STOP = True
 
-        elif (COLIST == False and COSIZE == False) and (SAVE == False and SMART == False):
+        elif (COLIST == False and COSIZE == False) and (SAVE == False and STOP == False):
             if colorIndex == 0:
                 bpoints[blue_index].appendleft(center)
             elif colorIndex == 1:
@@ -305,21 +378,21 @@ while True:
                  
     # Append the next deques when nothing is detected to avois messing up
     else:
-        bpoints.append(deque(maxlen=512))
+        bpoints.append(deque(maxlen=1024))
         #blue_index += 1
-        gpoints.append(deque(maxlen=512))
+        gpoints.append(deque(maxlen=1024))
         #green_index += 1
-        rpoints.append(deque(maxlen=512))
+        rpoints.append(deque(maxlen=1024))
         #red_index += 1
-        ypoints.append(deque(maxlen=512))
+        ypoints.append(deque(maxlen=1024))
         #yellow_index += 1
-        spoints.append(deque(maxlen=512))
+        spoints.append(deque(maxlen=1024))
         #blue_index += 1
-        ppoints.append(deque(maxlen=512))
+        ppoints.append(deque(maxlen=1024))
         #green_index += 1
-        wpoints.append(deque(maxlen=512))
+        wpoints.append(deque(maxlen=1024))
         #red_index += 1
-        npoints.append(deque(maxlen=512))
+        npoints.append(deque(maxlen=1024))
         #yellow_index += 1
 
     # Draw lines of all the colors on the canvas and frame 
@@ -331,18 +404,29 @@ while True:
                     continue
                 cv2.line(frame, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
                 cv2.line(blank, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
-
+                col = colors[i]
+    for x in rectangle:
+        cv2.rectangle(frame, (x[0],x[1]),(x[2],x[3]), x[4], 2)
     if SAVE is False:
         simg = frame.copy()
     colorlist(frame, center)
     colorsize(frame, center)
     save(frame, center)
+    smart(frame, center)
+    if center != None:
+        cv2.circle(frame, (center[0], center[1]), 3, (120, 255, 255), 2)
     # Show all the windows
-    cv2.imshow("Tracking", frame)
-    cv2.imshow("Paint", blank)
+    if RECT is False:
+        cv2.imshow("Tracking", frame)
+    else:
+        rect(frame, center)
+        if DRAW is True:
+            rectangle.append([xrect, yrect, xmax, ymax, col]) 
+        draw()
+    cv2.imshow("blank", blank)
     cv2.imshow("mask",Mask)
-
-	# If the 'q' key is pressed then stop the application 
+    
+    # If the 'q' key is pressed then stop the application 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
