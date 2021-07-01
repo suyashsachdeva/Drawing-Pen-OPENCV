@@ -10,16 +10,15 @@ import os
 def setValues(x):
    print("")
 global simg
-"""
+
 # Creating the trackbars needed for adjusting the marker colour
 cv2.namedWindow("Color detectors")
-cv2.createTrackbar("Upper Hue", "Color detectors", 153, 180,setValues)
-cv2.createTrackbar("Upper Saturation", "Color detectors", 255, 255,setValues)
-cv2.createTrackbar("Upper Value", "Color detectors", 255, 255,setValues)
-cv2.createTrackbar("Lower Hue", "Color detectors", 64, 180,setValues)
-cv2.createTrackbar("Lower Saturation", "Color detectors", 72, 255,setValues)
-cv2.createTrackbar("Lower Value", "Color detectors", 49, 255,setValues)
-"""
+cv2.createTrackbar("hue h", "Color detectors", 100, 180,setValues)
+cv2.createTrackbar("sat h", "Color detectors", 255, 255,setValues)
+cv2.createTrackbar("val h", "Color detectors", 255, 255,setValues)
+cv2.createTrackbar("hue l", "Color detectors", 40, 180,setValues)
+cv2.createTrackbar("sat l", "Color detectors", 100, 255,setValues)
+cv2.createTrackbar("val l", "Color detectors", 100, 255,setValues)
 
 # Giving different arrays to handle colour points of different colour
 bpoints = [deque(maxlen=1024)]
@@ -45,23 +44,9 @@ black_index = 0
 #The kernel to be used for dilation purpose 
 kernel = np.ones((5,5),np.uint8)
 
-colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255),(255,255,0), (255,0,255), (255,255,255), (0,0,0)]
+colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255),(255,255,0), (255,0,255), (255,255,255), (0, 0, 0)]
 colorIndex = 0
 
-# Here is code for Canvas setup
-paintWindow = np.zeros((471,636,3)) + 255
-paintWindow = cv2.rectangle(paintWindow, (40,1), (150,65), (0,0,0), 2)
-paintWindow = cv2.rectangle(paintWindow, (150,1), (265,65), colors[0], -1)
-paintWindow = cv2.rectangle(paintWindow, (265,1), (380,65), colors[1], -1)
-paintWindow = cv2.rectangle(paintWindow, (380,1), (495,65), colors[2], -1)
-paintWindow = cv2.rectangle(paintWindow, (495,1), (600,65), colors[3], -1)
-
-cv2.putText(paintWindow, "CLEAR", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
-cv2.putText(paintWindow, "BLUE", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-cv2.putText(paintWindow, "GREEN", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-cv2.putText(paintWindow, "RED", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-cv2.putText(paintWindow, "YELLOW", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
-cv2.namedWindow('Paint', cv2.WINDOW_AUTOSIZE)
     
 def colorlist(frame, cen):
     global COLIST
@@ -70,15 +55,6 @@ def colorlist(frame, cen):
     STRING = ["Blue","Green","Red","Yellow","Sky","Pink","White","Black"]
     if COLIST is True and SAVE is False:
         frame = cv2.rectangle(frame, (160,65), (255,305), (0,0,0),2)
-        
-        
-        # frame = cv2.rectangle(frame, (160,97), (255, 123), (0,0,255), -1)
-        # frame = cv2.rectangle(frame, (160,127), (255, 153), (0,255,0), -1)
-        # frame = cv2.rectangle(frame, (162,157), (253,183), (0,255,255), -1)
-        # frame = cv2.rectangle(frame, (160,187), (255, 213), (255,255,0), -1)
-        # frame = cv2.rectangle(frame, (160,217), (255, 243), (255,0,255), -1)
-        # frame = cv2.rectangle(frame, (160,247), (255, 273), (255,255,255), -1)
-        # frame = cv2.rectangle(frame, (160,277), (255, 303), (0,0,0), -1)
 
         for c in range(len(STRING)):
             frame = cv2.line(frame, (160,95+(c*30)), (255,95 + (c*30)), (0,0,0), 2)
@@ -132,22 +108,14 @@ def colorsize(frame, cen):
     global colsize
     if COSIZE is True and SAVE is False:
         frame = cv2.rectangle(frame, (275,65), (370,215), (0,0,0),2)
-        frame = cv2.line(frame, (275,95), (370,95), (0,0,0), 2)
-        frame = cv2.line(frame, (275,125), (370,125), (0,0,0), 2)
-        frame = cv2.line(frame, (275,155), (370,155), (0,0,0), 2)
-        frame = cv2.line(frame, (275,185), (370,185), (0,0,0), 2)
-
-        frame = cv2.rectangle(frame, (277,67), (368,93), (0,0,0), -1)
-        frame = cv2.rectangle(frame, (277,97), (368, 123), (255,255,255), -1)
-        frame = cv2.rectangle(frame, (277,127), (368,153), (0,0,0), -1)
-        frame = cv2.rectangle(frame, (277,157), (368, 183), (255,255,255), -1)
-        frame = cv2.rectangle(frame, (277,187), (368, 213), (0,0,0), -1)
-
-        cv2.putText(frame, "1 px", (310, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(frame, "2 px", (310,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
-        cv2.putText(frame, "3 px", (310, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(frame, "4 px", (310,170), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
-        cv2.putText(frame, "5 px", (310,200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+        for i in range(5):
+            if i%2 == 0:
+                p = 255
+            else : p = 0
+            
+            frame = cv2.line(frame, (275,95 + (i*30)), (370,95 + (i*30)), (0,0,0), 2)
+            frame = cv2.rectangle(frame, (277,67 + (i*30)), (368,93 + (i*30)), (abs(p -255), abs(p -255), abs(p -255)), -1)
+            cv2.putText(frame, str(1+i) +  "px", (310, 85 + (i*30)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (p,p,p), 2, cv2.LINE_AA)
         
         if colsize == 1 :
             frame =cv2.circle(frame, (360, 80), 4, (255,255,255), -1 )
@@ -202,6 +170,13 @@ def save(frame,cen):
         if 360 <= cen[0] <= 420 and 260 <= cen[1] <= 300:
             SAVE = False
 
+def smart():
+    global SMART
+
+    if SMART == True:
+        # b = blank[:,66:450]
+        SMART = False
+        pass
 
 # Loading the default webcam of PC.
 cap = cv2.VideoCapture(0)
@@ -209,7 +184,9 @@ cap = cv2.VideoCapture(0)
 COLIST = False
 COSIZE = False
 SAVE = False
+SMART = False
 colsize = 2
+blank = np.zeros((480,640,3))
 
 # Keep looping
 while True:
@@ -219,37 +196,36 @@ while True:
     frame = cv2.flip(frame, 1)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
+    hueh = cv2.getTrackbarPos("hue h", "Color detectors")
+    sath = cv2.getTrackbarPos("sat h", "Color detectors")
+    valh = cv2.getTrackbarPos("val h", "Color detectors")
+    huel = cv2.getTrackbarPos("hue l", "Color detectors")
+    satl = cv2.getTrackbarPos("sat l", "Color detectors")
+    vall = cv2.getTrackbarPos("val l", "Color detectors")
+    Upper_hsv = np.array([hueh,sath,valh])
+    Lower_hsv = np.array([huel,satl,vall])
     
-    u_hue = cv2.getTrackbarPos("Upper Hue", "Color detectors")
-    u_saturation = cv2.getTrackbarPos("Upper Saturation", "Color detectors")
-    u_value = cv2.getTrackbarPos("Upper Value", "Color detectors")
-    l_hue = cv2.getTrackbarPos("Lower Hue", "Color detectors")
-    l_saturation = cv2.getTrackbarPos("Lower Saturation", "Color detectors")
-    l_value = cv2.getTrackbarPos("Lower Value", "Color detectors")
-    Upper_hsv = np.array([u_hue,u_saturation,u_value])
-    Lower_hsv = np.array([l_hue,l_saturation,l_value])
-    
-
     # Adding the colour buttons to the live frame for colour access
     frame = cv2.rectangle(frame, (40,1), (140,65), (122,122,122), -1)
     frame = cv2.rectangle(frame, (160,1), (255,65), colors[0], -1)
     frame = cv2.rectangle(frame, (275,1), (370,65), colors[1], -1)
     frame = cv2.rectangle(frame, (390,1), (485,65), colors[2], -1)
     frame = cv2.rectangle(frame, (505,1), (600,65), colors[3], -1)
+    frame = cv2.rectangle(frame, (505,450),(600,480), colors[5], -1 )
   
     cv2.putText(frame, "CLEAR ALL", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Colour", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Size", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Exit", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Save", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
-
+    cv2.putText(frame, "SMART", (520,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
 
     # Identifying the pointer by making its mask
-    Mask = cv2.inRange(hsv, (100,100,100), (150,255,255))
+    Mask = cv2.inRange(hsv, Lower_hsv, Upper_hsv)
     Mask = cv2.erode(Mask, kernel, iterations=1)
     Mask = cv2.morphologyEx(Mask, cv2.MORPH_OPEN, kernel)
     Mask = cv2.dilate(Mask, kernel, iterations=1)
-
+    
     # Find contours for the pointer after idetifying it
     cnts,_ = cv2.findContours(Mask.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     #cv2.imshow("frame", cnts)
@@ -267,6 +243,7 @@ while True:
         M = cv2.moments(cnt)
         center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']),colsize)
 
+        
         # Now checking if the user wants to click on any button above the screen 
         if center[1] <= 65:
             if 40 <= center[0] <= 140 and SAVE is False: # Clear Button
@@ -288,8 +265,7 @@ while True:
                 white_index = 0
                 black_index = 0
 
-
-                paintWindow[:,:,:] = 255
+                blank[:,:,:] = 0
             elif 160 <= center[0] <= 255:
                     #colorIndex = 0 # Blue
                     COLIST = True
@@ -303,8 +279,13 @@ while True:
             elif 505 <= center[0] <= 600:
                     #colorIndex = 3 # Yellow
                     SAVE = True
-                
-        elif (COLIST == False and COSIZE == False) and SAVE == False:
+        elif center[1]>449:
+            if 505<=center[0]<=600:
+                SMART = True
+                #print("Entered the arena") 
+                smart() 
+
+        elif (COLIST == False and COSIZE == False) and (SAVE == False and SMART == False):
             if colorIndex == 0:
                 bpoints[blue_index].appendleft(center)
             elif colorIndex == 1:
@@ -321,7 +302,7 @@ while True:
                 wpoints[white_index].appendleft(center)
             elif colorIndex == 7:
                 npoints[black_index].appendleft(center)
-            
+                 
     # Append the next deques when nothing is detected to avois messing up
     else:
         bpoints.append(deque(maxlen=512))
@@ -349,7 +330,8 @@ while True:
                 if points[i][j][k - 1] is None or points[i][j][k] is None:
                     continue
                 cv2.line(frame, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
-                cv2.line(paintWindow, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
+                cv2.line(blank, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
+
     if SAVE is False:
         simg = frame.copy()
     colorlist(frame, center)
@@ -357,7 +339,7 @@ while True:
     save(frame, center)
     # Show all the windows
     cv2.imshow("Tracking", frame)
-    cv2.imshow("Paint", paintWindow)
+    cv2.imshow("Paint", blank)
     cv2.imshow("mask",Mask)
 
 	# If the 'q' key is pressed then stop the application 
