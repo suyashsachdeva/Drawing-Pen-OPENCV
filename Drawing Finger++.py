@@ -1,12 +1,18 @@
 # I am having a lot of problem in the save section of the program as i failed in the integration of the sddweight function
 # Then I also faced a lot of problem while making a confirmation block at the centre of the screen  
 # To make the program faster you have to remove list and bring in numpy arrays
+# While going to rect if the mask goes off at the time of then it starts to show error that only two values passed
+
+# The mistery bug that colors are changing not in a fixed pattern but are randomly change and not changing
+# The pattern that is any color above 1 color selected is negating all the olors that are below
 
 import numpy as np
 import cv2
 from collections import deque
 import os
-import math as m 
+import math as m
+
+from numpy.core.fromnumeric import size 
 
 #default called trackbar function 
 def setValues(x):
@@ -24,25 +30,10 @@ cv2.createTrackbar("sat l", "Color detectors", 100, 255,setValues)
 cv2.createTrackbar("val l", "Color detectors", 100, 255,setValues)
 
 # Giving different arrays to handle colour points of different colour
-bpoints = [deque(maxlen=1024)]
-gpoints = [deque(maxlen=1024)]
-rpoints = [deque(maxlen=1024)]
-ypoints = [deque(maxlen=1024)]
-spoints = [deque(maxlen=1024)]
-ppoints = [deque(maxlen=1024)]
-wpoints = [deque(maxlen=1024)]
-npoints = [deque(maxlen=1024)]
+bpoints = [deque(maxlen=8192)]
 
 # These indexes will be used to mark the points in particular arrays of specific colour
 blue_index = 0
-green_index = 0
-red_index = 0
-yellow_index = 0
-sky_index = 0
-pink_index = 0
-white_index = 0
-black_index = 0
-
 
 #The kernel to be used for dilation purpose 
 kernel = np.ones((5,5),np.uint8)
@@ -177,17 +168,22 @@ def smart(frame, cen):
     global RECT
     global SMART
     global PSEL
+
     SHAPE = ["Rectangle", "Circle"]
     if SMART == True:
         global STOP
-        cv2.rectangle(frame, (505,450), (600, 390), (0,0,0), 2)
+        global c
 
-        for c in range(len(SHAPE)):
-            frame = cv2.line(frame, (505,450-(c*30)), (600,450 - (c*30)), (0,0,0), 2)
-            frame = cv2.rectangle(frame, (503,448 - (c*30)), (600,422 - (c*30)), colors[c], -1)
-            cv2.putText(frame,SHAPE[c] , (515, 435 - (c*30)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+        for con in range(len(SHAPE)):
+            frame = cv2.line(frame, (505,450-(con*30)), (600,450 - (con*30)), (0,0,0), 2)
+            frame = cv2.rectangle(frame, (507,448 - (con*30)), (598,422 - (con*30)), colors[con], -1)
+            cv2.putText(frame,SHAPE[con] , (518, 438 - (con*30)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        cv2.rectangle(frame, (505, 480), (600, 452), (0,0,255), -1)
+        cv2.rectangle(frame, (505, 480), (600, 390), (0,0,0), 2)
+        cv2.putText(frame,"Quit" , (518, 468), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
 
-        #if cen[0]
+
         if cen != None:
             c=0
             if not(505 <= cen[0] <= 600 and 390 <= cen[1] <= 480) and PSEL == False :
@@ -195,23 +191,21 @@ def smart(frame, cen):
                 STOP = False
             elif (505 <= cen[0] <= 600 and 450 <= cen[1] <= 480):  
                 PSEL = False 
-            elif (505 <= cen[0] <= 600 and 390 <= cen[1] <= 450) or PSEL == True:
+            elif ((505 <= cen[0] <= 600 and 390 <= cen[1] <= 450) or PSEL == True) and not(cen is None):
                 if c==0:
                     xrect = cen[0]
                     yrect = cen[1]
                     c=1
                     PSEL = True
-                    if cen[1] >= 450:
-                        return "rectangle"
-                    elif cen[1] >= 420:
-                        return "circle"
-                    
+                    if 390 < cen[1] <= 420 and 505 <= cen[0] <= 600:
+                        return ("circle",cen[2])
+                    elif 420 < cen[1] <= 450 and 505 <= cen[0] <= 600:
+                        return ("rectangle",cen[2])
             
         else:
-            if c== 1:
+            if c== 1 :
                 SMART = False
                 RECT = True
-                print("fuvkoff")
             else:
                 SMART =True
         
@@ -227,12 +221,12 @@ def rect(frame,cen, v):
         ymax = cen[1]
         xmax = cen[0]
         if v == "rectangle":
-            cv2.rectangle(f,(xrect,yrect), (xmax, ymax), (255,255,255),2)
+            cv2.rectangle(f,(xrect,yrect), (xmax, ymax), (255,255,255),cen[2])
         elif v == "circle":
             radx = xmax - xrect
             rady = ymax - yrect
             rad = int(m.sqrt((radx*radx) + (rady*rady)))
-            cv2.circle(f, (xrect, yrect),rad,(255,255,255), 2 )
+            cv2.circle(f, (xrect, yrect),rad,(255,255,255), cen[2] )
 
     if cen == None and (xmax!=None and ymax != None):
         RECT = False
@@ -266,11 +260,11 @@ SAVE = False
 SMART = False
 PSEL = False
 STOP = False
+c = 0
 shape = []
 colsize = 2
 blank = np.zeros((480,640,3))
-col = colors[0]
-
+v = None
 # Loading the default webcam of PC.
 cap = cv2.VideoCapture(0)
 
@@ -304,7 +298,7 @@ while True:
     cv2.putText(frame, "Size", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Exit", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Save", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
-    cv2.putText(frame, "SMART", (520,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
+    cv2.putText(frame, "Shape", (520,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
 
     # Identifying the pointer by making its mask
     Mask = cv2.inRange(hsv, Lower_hsv, Upper_hsv)
@@ -326,30 +320,16 @@ while True:
         
         # Calculating the center of the detected contour
         M = cv2.moments(cnt)
-        center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']),colsize)
+        center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']),colsize, colorIndex)
 
         
         # Now checking if the user wants to click on any button above the screen 
         if center[1] <= 65:
             if 40 <= center[0] <= 140 and SAVE is False: # Clear Button
-                bpoints = [deque(maxlen=1024)]
-                gpoints = [deque(maxlen=1024)]
-                rpoints = [deque(maxlen=1024)]
-                ypoints = [deque(maxlen=1024)]
-                spoints = [deque(maxlen=1024)]
-                ppoints = [deque(maxlen=1024)]
-                wpoints = [deque(maxlen=1024)]
-                npoints = [deque(maxlen=1024)]
+                bpoints = [deque(maxlen=4096)]
 
                 blue_index = 0
-                green_index = 0
-                red_index = 0
-                yellow_index = 0
-                sky_index = 0
-                pink_index = 0
-                white_index = 0
-                black_index = 0
-
+                shape = []
                 blank[:,:,:] = 0
             elif 160 <= center[0] <= 255:
                     #colorIndex = 0 # Blue
@@ -370,81 +350,96 @@ while True:
                 STOP = True
 
         elif (COLIST == False and COSIZE == False) and (SAVE == False and STOP == False):
-            if colorIndex == 0:
-                bpoints[blue_index].appendleft(center)
-            elif colorIndex == 1:
-                gpoints[green_index].appendleft(center)
-            elif colorIndex == 2:
-                rpoints[red_index].appendleft(center)
-            elif colorIndex == 3:
-                ypoints[yellow_index].appendleft(center)
-            elif colorIndex == 4:
-                spoints[sky_index].appendleft(center)
-            elif colorIndex == 5:
-                ppoints[pink_index].appendleft(center)
-            elif colorIndex == 6:
-                wpoints[white_index].appendleft(center)
-            elif colorIndex == 7:
-                npoints[black_index].appendleft(center)
+            bpoints[blue_index].appendleft(center)
+            # elif colorIndex == 1:
+            #     gpoints[green_index].appendleft(center)
+            # elif colorIndex == 2:
+            #     rpoints[red_index].appendleft(center)
+            # elif colorIndex == 3:
+            #     ypoints[yellow_index].appendleft(center)
+            # elif colorIndex == 4:
+            #     spoints[sky_index].appendleft(center)
+            # elif colorIndex == 5:
+            #     ppoints[pink_index].appendleft(center)
+            # elif colorIndex == 6:
+            #     wpoints[white_index].appendleft(center)
+            # elif colorIndex == 7:
+            #     npoints[black_index].appendleft(center)
                  
     # Append the next deques when nothing is detected to avois messing up
     else:
-        bpoints.append(deque(maxlen=1024))
+        bpoints.append(deque(maxlen=4096))
         #blue_index += 1
-        gpoints.append(deque(maxlen=1024))
-        #green_index += 1
-        rpoints.append(deque(maxlen=1024))
-        #red_index += 1
-        ypoints.append(deque(maxlen=1024))
-        #yellow_index += 1
-        spoints.append(deque(maxlen=1024))
-        #blue_index += 1
-        ppoints.append(deque(maxlen=1024))
-        #green_index += 1
-        wpoints.append(deque(maxlen=1024))
-        #red_index += 1
-        npoints.append(deque(maxlen=1024))
-        #yellow_index += 1
+        # gpoints.append(deque(maxlen=1024))
+        # #green_index += 1
+        # rpoints.append(deque(maxlen=1024))
+        # #red_index += 1
+        # ypoints.append(deque(maxlen=1024))
+        # #yellow_index += 1
+        # spoints.append(deque(maxlen=1024))
+        # #blue_index += 1
+        # ppoints.append(deque(maxlen=1024))
+        # #green_index += 1
+        # wpoints.append(deque(maxlen=1024))
+        # #red_index += 1
+        # npoints.append(deque(maxlen=1024))
+        # #yellow_index += 1
 
     # Draw lines of all the colors on the canvas and frame 
-    points = [bpoints, gpoints, rpoints, ypoints, spoints, ppoints, wpoints, npoints]
+    points = [bpoints]
     for i in range(len(points)):
         for j in range(len(points[i])):
             for k in range(1, len(points[i][j])):
                 if points[i][j][k - 1] is None or points[i][j][k] is None:
                     continue
-                cv2.line(frame, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
-                cv2.line(blank, points[i][j][k - 1][:2], points[i][j][k][:2], colors[i], points[i][j][k][-1])
-                col = colors[i]
+                x1,y1 = points[i][j][k - 1][:2]
+                x2,y2 = points[i][j][k][:2]
+                xp = x2 - x1
+                yp = y2 - y1
+                dist = m.sqrt((xp*xp) + (yp*yp))
+                if dist <= 75:
+                    cv2.line(frame, points[i][j][k - 1][:2], points[i][j][k][:2], colors[points[i][j][k-1][-1]], points[i][j][k][-2])
+                    cv2.line(blank, points[i][j][k - 1][:2], points[i][j][k][:2], colors[points[i][j][k-1][-1]], points[i][j][k][-2])
+                else:
+                    cv2.circle(frame, points[i][j][k - 1][:2], points[i][j][k][-2], colors[points[i][j][k-1][-1]], -1)
+                    cv2.circle(blank, points[i][j][k - 1][:2], points[i][j][k][-2], colors[points[i][j][k-1][-1]], -1)
+                col = colors[points[i][j][k][-1]]
+                
     for x in shape:
         if x[-1] == "rectangle":
-            cv2.rectangle(frame, (x[0],x[1]),(x[2],x[3]), x[4], 2)
-            print("fuckoff")
+            cv2.rectangle(frame, (x[0],x[1]),(x[2],x[3]), x[5], x[4])
+            
         elif x[-1] == "circle":
             radx = x[2] - x[0]
             rady = x[3] - x[1]
             rad = int(m.sqrt((radx*radx) + (rady*rady)))
-            cv2.circle(frame, (x[0], x[1]),rad, x[4], 2 )
+            cv2.circle(frame, (x[0], x[1]),rad, x[5], x[4])
 
     if SAVE is False:
         simg = frame.copy()
+
     colorlist(frame, center)
     colorsize(frame, center)
     save(frame, center)
     var = smart(frame, center)
+
     if var != None:
-        v = var
+        v = var[0]
+        s = var[1]
     if center != None:
         cv2.circle(frame, (center[0], center[1]), 3, (120, 255, 255), 2)
+    
     # Show all the windows
     if RECT is False:
         cv2.imshow("Tracking", frame)
     else:
         rect(frame, center, v)
-        if DRAW is True:
-            print(var)
-            shape.append([xrect, yrect, xmax, ymax, col, v]) 
+        if DRAW is True and v != None:
+            #print(center[2])
+            shape.append([xrect, yrect, xmax, ymax,s, colors[colorIndex], v]) 
+            col = colors[0]
         draw()
+    
     cv2.imshow("blank", blank)
     cv2.imshow("mask",Mask)
     
