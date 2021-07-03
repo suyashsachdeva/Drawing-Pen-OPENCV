@@ -1,7 +1,4 @@
-# I am having a lot of problem in the save section of the program as i failed in the integration of the sddweight function
-# Then I also faced a lot of problem while making a confirmation block at the centre of the screen  
-# To make the program faster you have to remove list and bring in numpy arrays
-# While going to rect if the mask goes off at the time of then it starts to show error that only two values passed
+ # While going to rect if the mask goes off at the time of then it starts to show error that only two values passed
 
 # The mistery bug that colors are changing not in a fixed pattern but are randomly change and not changing
 # The pattern that is any color above 1 color selected is negating all the olors that are below
@@ -12,13 +9,16 @@ from collections import deque
 import os
 import math as m
 
-from numpy.core.fromnumeric import size 
 
 #default called trackbar function 
 def setValues(x):
    print("")
 global simg
-
+KEYBOARD = [["1","2","3","4","5","6","7","8","9","0"],["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+["a", "s", "d", "f", "g", "h", "j", "k", "l"," "], ["z", "x", "c", "v", "b", "n", "m", ".", "\b" ,".."]]
+v = None
+c = None
+reader = None
 # Creating the trackbars needed for adjusting the marker colour
 cv2.namedWindow("Color detectors")
 cv2.resizeWindow("Color detectors",400, 280)
@@ -210,7 +210,7 @@ def smart(frame, cen):
                 SMART =True
         
                 
-def rect(frame,cen, v):
+def rect(frame, cen, v):
     global RECT 
     global xmax
     global ymax
@@ -248,8 +248,72 @@ def draw():
         xmax = None
         ymax =None
         STOP = False
-        
 
+def keyboard():
+    global KEY
+    global STOP
+    global v 
+    global c 
+    global reader
+
+    if KEY is True:
+        cv2.rectangle(frame, (98,148), (502,402), (0,0,0), 2)
+        cv2.rectangle(frame, (100,150), (500, 200), (120,120,120), -1) 
+        cv2.rectangle(frame, (100,200), (500, 400), (55,55,55), -1)
+        cv2.line(frame, (98, 199), (502,199), (0,0,0), 2)
+        for x in range(10):
+            for y in range(4):
+                cv2.rectangle(frame, (105 + (x*40),210 + (y*50)), (135 + (x*40), 240 + (y*50)),(0,0,0), 1)
+                cv2.rectangle(frame, (105 + (x*40),210 + (y*50)), (135 + (x*40), 240 + (y*50)),(200,200,200), -1)
+                cv2.putText(frame, KEYBOARD[y][x], (112 + (x*40),230 + (y*50)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 0), 1)
+        
+        
+        if center is not(None):
+            if 100<center[0]<500 and 200<center[1]<400:
+                xtext = (center[0] - 105)/40
+                ytext = (center[1] - 210)/50
+                if int(xtext)+0.75 > xtext and int(ytext) + 0.6 > ytext:
+                    c = KEYBOARD[int(ytext)][int(xtext)]
+                else:
+                    v = None
+                    c = None
+
+                if c == "\b" and c != v:
+                    reader = reader[:-1]
+                    f = open("ocv writer.txt", 'w')
+                    f.write(reader)
+                    f.close()
+                
+                f = open("ocv writer.txt", 'a')
+                if c != v and c != "\b":  
+                    f.write(c)
+                elif c == "\b":
+                    v = c
+                
+                f.close()
+                if v != c and c != "\b":
+                    f = open("ocv writer.txt", 'r')
+                    reader = f.read()
+                    f.close()
+                    v = c
+                    
+                
+
+            else:
+                v = None
+        else:
+            v = None 
+        cv2.putText(frame, reader, (110, 180), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 2) 
+
+        if center is not(None):
+            if 505<=center[0]<=600 and 450<=center[1]<=480:     
+                KEY = False
+                STOP = False
+
+
+# ALL the variables useed in this program 
+# If you are a friend and want to help me please remove useless variale
+KEY = False
 RECT = False
 DRAW = False
 ymax = None
@@ -260,14 +324,41 @@ SAVE = False
 SMART = False
 PSEL = False
 STOP = False
+# R.I.P. 
+
 c = 0
 shape = []
 colsize = 2
 blank = np.zeros((480,640,3))
 v = None
+
+
+# def write(frame):
+#     f = open("Text file.txt", 'a')
+#     c = input()
+#     if c != None:
+#         f.write(c)
+#         f.close()
+#     f = open("Text file.txt", 'r')
+#     reader = f.read()
+#     f.close()
+#     return reader
+
+#     pass
+"""
+NOTE :-
+Note from here all the commands are looped so please avoid unnecessary command as it will decrease the FPS
+
+Use more effectent method like start replacing list with array and reduce variables
+
+All the code above this are the functions used in the program and their are variables used in the program
+
+Please dont get confused in the shape drawing function smart, rect and draw all these functions are linked with 
+each other
+"""
+
 # Loading the default webcam of PC.
 cap = cv2.VideoCapture(0)
-
 # Keep looping
 while True:
     # Reading the frame from the camera
@@ -292,6 +383,7 @@ while True:
     frame = cv2.rectangle(frame, (390,1), (485,65), colors[2], -1)
     frame = cv2.rectangle(frame, (505,1), (600,65), colors[3], -1)
     frame = cv2.rectangle(frame, (505,450),(600,480), colors[5], -1 )
+    frame = cv2.rectangle(frame, (40,450),(135,480), colors[5], -1 )
   
     cv2.putText(frame, "CLEAR ALL", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Colour", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
@@ -299,6 +391,7 @@ while True:
     cv2.putText(frame, "Exit", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Save", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
     cv2.putText(frame, "Shape", (520,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
+    cv2.putText(frame, "FBoard", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
 
     # Identifying the pointer by making its mask
     Mask = cv2.inRange(hsv, Lower_hsv, Upper_hsv)
@@ -347,6 +440,10 @@ while True:
         elif center[1]>449:
             if 505<=center[0]<=600:
                 SMART = True  
+                STOP = True
+
+            elif 40 <= center[0] <= 135:
+                KEY = True
                 STOP = True
 
         elif (COLIST == False and COSIZE == False) and (SAVE == False and STOP == False):
@@ -421,8 +518,10 @@ while True:
     colorlist(frame, center)
     colorsize(frame, center)
     save(frame, center)
-    var = smart(frame, center)
+    keyboard()
 
+
+    var = smart(frame, center)
     if var != None:
         v = var[0]
         s = var[1]
@@ -440,6 +539,8 @@ while True:
             col = colors[0]
         draw()
     
+
+
     cv2.imshow("blank", blank)
     cv2.imshow("mask",Mask)
     
