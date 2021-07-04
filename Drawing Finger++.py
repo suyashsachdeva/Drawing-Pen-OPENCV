@@ -16,8 +16,11 @@ def setValues(x):
 
 
 # Functional variables 
-KEYBOARD = [["1","2","3","4","5","6","7","8","9","0"],["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-["a", "s", "d", "f", "g", "h", "j", "k", "l"," "], ["z", "x", "c", "v", "b", "n", "m", ".", "\b" ,".."]]
+KEYBOARD = [[["1","2","3","4","5","6","7","8","9","0"],["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+["a", "s", "d", "f", "g", "h", "j", "k", "l"," "], ["z", "x", "c", "v", "b", "n", "m", "K1", "bs" ,"?"]],
+[["1","2","3","4","5","6","7","8","9","0"],["!", "@", "#", "$", "%", "^", "&", "*", "(", ")"],
+["{", "}", "[", "]", ":", ";", "'", '"', "<",">"], [" ", ",", ".", "+", "-", "_", "=", "K2", "bs" ,"/"]]]
+
 v = None
 c = None
 reader = None
@@ -214,11 +217,16 @@ def smart(frame, cen):
                 SMART =True
         
                 
-def rect(frame, cen, v):
+def rect(frame, cen):
     global RECT 
     global xmax
     global ymax
     global DRAW
+    global v
+
+    cv2.rectangle(frame, (505, 480), (600, 452), (0,0,255), -1)
+    cv2.rectangle(frame, (505, 480), (600, 450), (0,0,0), 2)
+    cv2.putText(frame,"Quit" , (518, 468), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
 
     f = frame.copy()
     if cen != None:
@@ -231,6 +239,11 @@ def rect(frame, cen, v):
             rady = ymax - yrect
             rad = int(m.sqrt((radx*radx) + (rady*rady)))
             cv2.circle(f, (xrect, yrect),rad,(255,255,255), cen[2] )
+        
+        if 505 <= center[0] <= 600 and 450 <= center[1] <= 480:
+            RECT = False
+            DRAW = True
+            v = None
 
     if cen == None and (xmax!=None and ymax != None):
         RECT = False
@@ -259,17 +272,29 @@ def keyboard():
     global c 
     global reader
     global LOC1
+    global STOP
+    global keynum
 
     if KEY is True:
+        
         cv2.rectangle(frame, (98,148), (502,402), (0,0,0), 2)
         cv2.rectangle(frame, (100,150), (500, 200), (120,120,120), -1) 
         cv2.rectangle(frame, (100,200), (500, 400), (55,55,55), -1)
         cv2.line(frame, (98, 199), (502,199), (0,0,0), 2)
+
+        cv2.rectangle(frame, (355,155), (405, 195), (50,255,50), -1)
+        cv2.rectangle(frame, (355,155), (405, 195), (0,0,0), 1)
+        cv2.putText(frame, "OK", (360, 180), cv2.FONT_HERSHEY_COMPLEX, 0.6, (0,0,0), 2)
+
+        cv2.rectangle(frame, (415,155), (495, 195), (50,55,250), -1)
+        cv2.rectangle(frame, (415,155), (495, 195), (0,0,0), 1)
+        cv2.putText(frame, "Cancel", (420, 180), cv2.FONT_HERSHEY_COMPLEX, 0.6, (0,0,0), 2)
+
         for x in range(10):
             for y in range(4):
                 cv2.rectangle(frame, (105 + (x*40),210 + (y*50)), (135 + (x*40), 240 + (y*50)),(0,0,0), 1)
                 cv2.rectangle(frame, (105 + (x*40),210 + (y*50)), (135 + (x*40), 240 + (y*50)),(200,200,200), -1)
-                cv2.putText(frame, KEYBOARD[y][x], (112 + (x*40),230 + (y*50)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 0), 1)
+                cv2.putText(frame, KEYBOARD[keynum][y][x], (112 + (x*40),230 + (y*50)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 0), 1)
         
         
         if center is not(None):
@@ -277,57 +302,97 @@ def keyboard():
                 xtext = (center[0] - 105)/40
                 ytext = (center[1] - 210)/50
                 if int(xtext)+0.75 > xtext and int(ytext) + 0.6 > ytext:
-                    c = KEYBOARD[int(ytext)][int(xtext)]
+                    c = KEYBOARD[keynum][int(ytext)][int(xtext)]
                 else:
                     v = None
                     c = None
 
-                if c == "\b" and c != v:
-                    reader = reader[:-1]
-                    f = open("ocv writer.txt", 'w')
-                    f.write(reader)
-                    f.close()
-                
+                if (c == "bs" and c != v) and reader is not(None):
+                    if len(reader) > 1 :
+                        reader = reader[:-1]
+                        f = open("ocv writer.txt", 'w')
+                        f.write(reader)
+                        f.close()
+                    elif len(reader) == 1:
+                        reader = None
+                        if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
+                            os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
+                elif (c == "K1" or c == "K2") and (v != "K1" and v != "K2"):
+                    if keynum == 0:
+                        keynum = 1
+
+                    else:
+                        keynum = 0
+
                 f = open("ocv writer.txt", 'a')
-                if c != v and c != "\b":  
-                    f.write(c)
-                elif c == "\b":
-                    v = c
-                
-                f.close()
-                if v != c and c != "\b":
+                if reader is not(None):
+                    if ((c != v and c != "bs") and (c != "K1" and c != "K2")) and len(reader) <= 24:  
+                        f.write(c)
+                    elif c == "bs":
+                        v = c  
+                    f.close()
+
+                if v != c and c != "bs":
                     f = open("ocv writer.txt", 'r')
                     reader = f.read()
                     f.close()
-                    v = c
-                    
-                
-
+                    v = c                   
             else:
                 v = None
+                
         else:
             v = None 
-        cv2.putText(frame, reader, (110, 180), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 2) 
-
+        if reader is not(None):
+            if len(reader) <= 15:
+                cv2.putText(frame, reader, (110, 180), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 2)
+            elif len(reader) > 15:
+                font =0.7 - int((len(reader) - 14)/3)/10
+                cv2.putText(frame, reader, (110, 180), cv2.FONT_HERSHEY_COMPLEX, font, (0,0,0), 1)
+        
         if center is not(None):
-            if 200<=center[0]<=400 and 450<=center[1]<=480:     
+            if 355<=center[0]<=405 and 155 <=center[1]<= 195:     
                 KEY = False
-                LOC1 =True
+                keynum = 0
+                if reader is None:
+                    STOP = False
+                else :
+                    LOC1 =True
+
+            elif 415<=center[0]<=495 and 155 <=center[1]<= 195:
+                v = None
+                c = None
+                STOP = False
+                KEY = False
+                reader = None
+                keynum = 0
+                if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
+                    os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
 
 def locat1():
     global LOC1
     global LOC2
     global loc1
+    global STOP
+    global reader
+
     if LOC1 is True:
+        cv2.rectangle(frame, (40, 450), (135, 480), (0,0,255), -1)
+        cv2.putText(frame, "Cancel", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0,0,0), 1, cv2.LINE_AA)
         if center is not(None):
                 loc1 = center[:2]
-                
+                if 40 <= center[0] <= 135 and 450 <= center[1] <= 480:
+                    LOC1 = False
+                    STOP = False
+                    loc1 = None
+                    reader = None
+
+                    if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
+                            os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
         elif loc1 is not(None) and center is None:
             LOC1 = False
             LOC2 = True
-            return loc1 
-    pass
-
+        
+            
 def locat2():
     global LOC2
     global STOP
@@ -337,28 +402,41 @@ def locat2():
     global a
     if LOC2 is True:
         f = frame.copy()
-        cv2.circle(frame, loc1, 3, (255,255,255), -1)
+        cv2.circle(f, loc1, 3, (255,255,255), -1)
+        cv2.rectangle(f, (40, 450), (135, 480), (0,0,255), -1)
+        cv2.putText(f, "Cancel", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0,0,0), 1, cv2.LINE_AA)
         if center is  not(None):
+            cv2.circle(f, center[:2], 3, (120, 255, 255), 2)
             if loc1[1] >= center[1]:
                 if loc1[0]<center[0]:
                     font = (loc1[1] - center[1])/13.7
                     cv2.putText(f, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
                     a = [loc1,font, colors[center[3]], center[2]]
                 else:
-                    font = (loc1[0] - center[0])/(20*len(reader))
-                    cv2.putText(f,reader, (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    font = (loc1[0] - center[0])/(18*len(reader))
+                    cv2.putText(f,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
                     a = [(center[0], loc1[1]),font, colors[center[3]], center[2]]
             else:
                 if loc1[0]<center[0]:
-                    font = (loc1[0] - center[0])/(20*len(reader))
+                    font = (loc1[0] - center[0])/(18*len(reader))
                     cv2.putText(f,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
                     a = [(center[0], loc1[1]),font, colors[center[3]], center[2]]
                 else:
                     font = (loc1[1] - center[1])/13.7
                     cv2.putText(f, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
                     a = [loc1,font, colors[center[3]], center[2]]
+
+                
+            if 40 <= center[0] <= 135 and 450 <= center[1] <= 480:
+                LOC2 = False
+                STOP = False
+                loc1 = None
+                reader = None
+
+                if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
+                    os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
+
         elif  a != [] and center is None: 
-            print(a)
             cv2.putText(frame, reader,a[0] ,cv2.FONT_HERSHEY_COMPLEX,a[1], a[2], a[3])
             text.append([reader, a[0],a[1], a[2], a[3]])
             LOC2 = False
@@ -366,8 +444,10 @@ def locat2():
             a = []
             loc1 = None
             reader = None
-            os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
-            
+
+            if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
+                os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
+           
         cv2.imshow("Tracking", f)
 
 
@@ -389,6 +469,7 @@ FONT = False
 LOC1 = False
 LOC2 = False
 text = []
+keynum = 0
 a = []
 # R.I.P. 
 
@@ -449,7 +530,7 @@ while True:
     frame = cv2.rectangle(frame, (390,1), (485,65), colors[2], -1)
     frame = cv2.rectangle(frame, (505,1), (600,65), colors[3], -1)
     frame = cv2.rectangle(frame, (505,450),(600,480), colors[5], -1 )
-    frame = cv2.rectangle(frame, (40,450),(135,480), colors[5], -1 )
+    frame = cv2.rectangle(frame, (40,450),(135,480), colors[3], -1 )
   
     cv2.putText(frame, "CLEAR ALL", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Colour", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
@@ -457,7 +538,7 @@ while True:
     cv2.putText(frame, "Exit", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "Save", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
     cv2.putText(frame, "Shape", (520,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
-    cv2.putText(frame, "FBoard", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
+    cv2.putText(frame, "FBoard", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[5], 1, cv2.LINE_AA)
 
     # Identifying the pointer by making its mask
     Mask = cv2.inRange(hsv, Lower_hsv, Upper_hsv)
@@ -491,26 +572,26 @@ while True:
                 shape = []
                 blank[:,:,:] = 0
             elif 160 <= center[0] <= 255:
-                    #colorIndex = 0 # Blue
                     COLIST = True
             elif 275 <= center[0] <= 370:
-                    #colorIndex = 1 # Green
                     COSIZE = True
             elif 390 <= center[0] <= 485:
-                    if SAVE is False:
+                    if SAVE is False and STOP is False:
                         break
-                    #colorIndex = 2 # Red
             elif 505 <= center[0] <= 600:
-                    #colorIndex = 3 # Yellow
-                    SAVE = True
+                    if STOP is False:
+                        SAVE = True
+
         elif center[1]>449:
             if 505<=center[0]<=600:
-                SMART = True  
-                STOP = True
+                if STOP is False:
+                    SMART = True  
+                    STOP = True
 
             elif 40 <= center[0] <= 135:
-                KEY = True
-                STOP = True
+                if STOP is False:
+                    KEY = True
+                    STOP = True
 
         elif (COLIST == False and COSIZE == False) and (SAVE == False and STOP == False):
             bpoints[blue_index].appendleft(center)
@@ -604,11 +685,9 @@ while True:
     elif LOC2 is True and RECT is False:
         pass
     else:
-        rect(frame, center, v)
+        rect(frame, center)
         if DRAW is True and v != None:
-            #print(center[2])
             shape.append([xrect, yrect, xmax, ymax,s, colors[colorIndex], v]) 
-            col = colors[0]
         draw()
     
     cv2.imshow("blank", blank)
@@ -617,6 +696,7 @@ while True:
     # If the 'q' key is pressed then stop the application 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
+
 if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
     os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
 # Release the camera and all resources
