@@ -13,12 +13,16 @@ import math as m
 #default called trackbar function 
 def setValues(x):
    print("")
-global simg
+
+
+# Functional variables 
 KEYBOARD = [["1","2","3","4","5","6","7","8","9","0"],["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
 ["a", "s", "d", "f", "g", "h", "j", "k", "l"," "], ["z", "x", "c", "v", "b", "n", "m", ".", "\b" ,".."]]
 v = None
 c = None
 reader = None
+loc1 = None
+
 # Creating the trackbars needed for adjusting the marker colour
 cv2.namedWindow("Color detectors")
 cv2.resizeWindow("Color detectors",400, 280)
@@ -251,10 +255,10 @@ def draw():
 
 def keyboard():
     global KEY
-    global STOP
     global v 
     global c 
     global reader
+    global LOC1
 
     if KEY is True:
         cv2.rectangle(frame, (98,148), (502,402), (0,0,0), 2)
@@ -306,9 +310,66 @@ def keyboard():
         cv2.putText(frame, reader, (110, 180), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 2) 
 
         if center is not(None):
-            if 505<=center[0]<=600 and 450<=center[1]<=480:     
+            if 200<=center[0]<=400 and 450<=center[1]<=480:     
                 KEY = False
-                STOP = False
+                LOC1 =True
+
+def locat1():
+    global LOC1
+    global LOC2
+    global loc1
+    if LOC1 is True:
+        if center is not(None):
+                loc1 = center[:2]
+                
+        elif loc1 is not(None) and center is None:
+            LOC1 = False
+            LOC2 = True
+            return loc1 
+    pass
+
+def locat2():
+    global LOC2
+    global STOP
+    global loc1
+    global text
+    global reader
+    global a
+    if LOC2 is True:
+        f = frame.copy()
+        cv2.circle(frame, loc1, 3, (255,255,255), -1)
+        if center is  not(None):
+            if loc1[1] >= center[1]:
+                if loc1[0]<center[0]:
+                    font = (loc1[1] - center[1])/13.7
+                    cv2.putText(f, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [loc1,font, colors[center[3]], center[2]]
+                else:
+                    font = (loc1[0] - center[0])/(20*len(reader))
+                    cv2.putText(f,reader, (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [(center[0], loc1[1]),font, colors[center[3]], center[2]]
+            else:
+                if loc1[0]<center[0]:
+                    font = (loc1[0] - center[0])/(20*len(reader))
+                    cv2.putText(f,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [(center[0], loc1[1]),font, colors[center[3]], center[2]]
+                else:
+                    font = (loc1[1] - center[1])/13.7
+                    cv2.putText(f, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [loc1,font, colors[center[3]], center[2]]
+        elif  a != [] and center is None: 
+            print(a)
+            cv2.putText(frame, reader,a[0] ,cv2.FONT_HERSHEY_COMPLEX,a[1], a[2], a[3])
+            text.append([reader, a[0],a[1], a[2], a[3]])
+            LOC2 = False
+            STOP = False
+            a = []
+            loc1 = None
+            reader = None
+            os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
+            
+        cv2.imshow("Tracking", f)
+
 
 
 # ALL the variables useed in this program 
@@ -324,6 +385,11 @@ SAVE = False
 SMART = False
 PSEL = False
 STOP = False
+FONT = False
+LOC1 = False
+LOC2 = False
+text = []
+a = []
 # R.I.P. 
 
 c = 0
@@ -512,6 +578,9 @@ while True:
             rad = int(m.sqrt((radx*radx) + (rady*rady)))
             cv2.circle(frame, (x[0], x[1]),rad, x[5], x[4])
 
+    for x in text:
+        cv2.putText(frame, x[0], x[1], cv2.FONT_HERSHEY_COMPLEX, x[2], x[3], x[4])
+
     if SAVE is False:
         simg = frame.copy()
 
@@ -519,7 +588,8 @@ while True:
     colorsize(frame, center)
     save(frame, center)
     keyboard()
-
+    locat1()
+    locat2()
 
     var = smart(frame, center)
     if var != None:
@@ -529,8 +599,10 @@ while True:
         cv2.circle(frame, (center[0], center[1]), 3, (120, 255, 255), 2)
     
     # Show all the windows
-    if RECT is False:
+    if RECT is False and LOC2 is False:
         cv2.imshow("Tracking", frame)
+    elif LOC2 is True and RECT is False:
+        pass
     else:
         rect(frame, center, v)
         if DRAW is True and v != None:
@@ -539,15 +611,14 @@ while True:
             col = colors[0]
         draw()
     
-
-
     cv2.imshow("blank", blank)
     cv2.imshow("mask",Mask)
     
     # If the 'q' key is pressed then stop the application 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
-
+if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
+    os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
 # Release the camera and all resources
 cap.release()
 cv2.destroyAllWindows()
