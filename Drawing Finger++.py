@@ -2,12 +2,14 @@
 
 # The mistery bug that colors are changing not in a fixed pattern but are randomly change and not changing
 # The pattern that is any color above 1 color selected is negating all the olors that are below
+# You have to add a calculator likr feature in this for equation and math
 
 import numpy as np
 import cv2
 from collections import deque
 import os
 import math as m
+import time
 
 
 #default called trackbar function 
@@ -29,7 +31,7 @@ loc1 = None
 # Creating the trackbars needed for adjusting the marker colour
 cv2.namedWindow("Color detectors")
 cv2.resizeWindow("Color detectors",400, 280)
-cv2.createTrackbar("hue h", "Color detectors", 100, 180,setValues)
+cv2.createTrackbar("hue h", "Color detectors", 80, 180,setValues)
 cv2.createTrackbar("sat h", "Color detectors", 255, 255,setValues)
 cv2.createTrackbar("val h", "Color detectors", 255, 255,setValues)
 cv2.createTrackbar("hue l", "Color detectors", 40, 180,setValues)
@@ -37,7 +39,7 @@ cv2.createTrackbar("sat l", "Color detectors", 100, 255,setValues)
 cv2.createTrackbar("val l", "Color detectors", 100, 255,setValues)
 
 # Giving different arrays to handle colour points of different colour
-bpoints = [deque(maxlen=8192)]
+bpoints = [deque(maxlen=4096)]
 
 # These indexes will be used to mark the points in particular arrays of specific colour
 blue_index = 0
@@ -228,17 +230,17 @@ def rect(frame, cen):
     cv2.rectangle(frame, (505, 480), (600, 450), (0,0,0), 2)
     cv2.putText(frame,"Quit" , (518, 468), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
 
-    f = frame.copy()
+    #f = frame.copy()
     if cen != None:
         ymax = cen[1]
         xmax = cen[0]
         if v == "rectangle":
-            cv2.rectangle(f,(xrect,yrect), (xmax, ymax), (255,255,255),cen[2])
+            cv2.rectangle(frame,(xrect,yrect), (xmax, ymax), (255,255,255),cen[2])
         elif v == "circle":
             radx = xmax - xrect
             rady = ymax - yrect
             rad = int(m.sqrt((radx*radx) + (rady*rady)))
-            cv2.circle(f, (xrect, yrect),rad,(255,255,255), cen[2] )
+            cv2.circle(frame, (xrect, yrect),rad,(255,255,255), cen[2] )
         
         if 505 <= center[0] <= 600 and 450 <= center[1] <= 480:
             RECT = False
@@ -248,7 +250,7 @@ def rect(frame, cen):
     if cen == None and (xmax!=None and ymax != None):
         RECT = False
         DRAW = True
-    cv2.imshow("Tracking", f)
+    cv2.imshow("Tracking", frame)
 
 
 def draw():
@@ -401,30 +403,30 @@ def locat2():
     global reader
     global a
     if LOC2 is True:
-        f = frame.copy()
-        cv2.circle(f, loc1, 3, (255,255,255), -1)
-        cv2.rectangle(f, (40, 450), (135, 480), (0,0,255), -1)
-        cv2.putText(f, "Cancel", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0,0,0), 1, cv2.LINE_AA)
+        
+        cv2.circle(frame, loc1, 3, (255,255,255), -1)
+        cv2.rectangle(frame, (40, 450), (135, 480), (0,0,255), -1)
+        cv2.putText(frame, "Cancel", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0,0,0), 1, cv2.LINE_AA)
         if center is  not(None):
-            cv2.circle(f, center[:2], 3, (120, 255, 255), 2)
+            cv2.circle(frame, center[:2], 3, (120, 255, 255), 2)
             if loc1[1] >= center[1]:
                 if loc1[0]<center[0]:
                     font = (loc1[1] - center[1])/13.7
-                    cv2.putText(f, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
-                    a = [loc1,font, colors[center[3]], center[2]]
+                    cv2.putText(frame, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [loc1,font, colors[center[3]], center[2], reader]
                 else:
                     font = (loc1[0] - center[0])/(18*len(reader))
-                    cv2.putText(f,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
-                    a = [(center[0], loc1[1]),font, colors[center[3]], center[2]]
+                    cv2.putText(frame,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [(center[0], loc1[1]),font, colors[center[3]], center[2],reader[::-1]]
             else:
                 if loc1[0]<center[0]:
                     font = (loc1[0] - center[0])/(18*len(reader))
-                    cv2.putText(f,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
-                    a = [(center[0], loc1[1]),font, colors[center[3]], center[2]]
+                    cv2.putText(frame,reader[::-1], (center[0], loc1[1]), cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a = [(center[0], loc1[1]),font, colors[center[3]], center[2], reader[::-1]]
                 else:
                     font = (loc1[1] - center[1])/13.7
-                    cv2.putText(f, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
-                    a = [loc1,font, colors[center[3]], center[2]]
+                    cv2.putText(frame, reader, loc1, cv2.FONT_HERSHEY_COMPLEX, font, (255,255,255), 1 )
+                    a =  [loc1,font, colors[center[3]], center[2], reader]
 
                 
             if 40 <= center[0] <= 135 and 450 <= center[1] <= 480:
@@ -438,7 +440,7 @@ def locat2():
 
         elif  a != [] and center is None: 
             cv2.putText(frame, reader,a[0] ,cv2.FONT_HERSHEY_COMPLEX,a[1], a[2], a[3])
-            text.append([reader, a[0],a[1], a[2], a[3]])
+            text.append([a[-1], a[0],a[1], a[2], a[3]])
             LOC2 = False
             STOP = False
             a = []
@@ -448,8 +450,22 @@ def locat2():
             if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
                 os.remove("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt")
            
-        cv2.imshow("Tracking", f)
-
+def feature():
+    global FEATURE
+    global STOP
+    WORD = ['math', 'pointer']
+    if FEATURE is True:
+        cv2.rectangle(frame, (275,450), (370,390), (0,255,0), -1)
+        cv2.rectangle(frame, (275,450), (370,390), (0,0,0), 2)
+        
+        for c in range(len(WORD)):
+            cv2.line(frame, (275,420-(c*30)), (370, 420-(c*30)),(0,0,0), 2)
+            cv2.putText(frame, WORD[c], (295,438 - (c*30)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0,0,0), 2)
+        
+        if center is not(None):
+            if (390, 275)<center<(450, 370):
+                FEATURE=False
+                STOP = False
 
 
 # ALL the variables useed in this program 
@@ -468,11 +484,12 @@ STOP = False
 FONT = False
 LOC1 = False
 LOC2 = False
+FEATURE = False
 text = []
 keynum = 0
 a = []
 # R.I.P. 
-
+ptime = 0
 c = 0
 shape = []
 colsize = 2
@@ -524,21 +541,23 @@ while True:
     Lower_hsv = np.array([huel,satl,vall])
     
     # Adding the colour buttons to the live frame for colour access
-    frame = cv2.rectangle(frame, (40,1), (140,65), (122,122,122), -1)
-    frame = cv2.rectangle(frame, (160,1), (255,65), colors[0], -1)
-    frame = cv2.rectangle(frame, (275,1), (370,65), colors[1], -1)
-    frame = cv2.rectangle(frame, (390,1), (485,65), colors[2], -1)
-    frame = cv2.rectangle(frame, (505,1), (600,65), colors[3], -1)
-    frame = cv2.rectangle(frame, (505,450),(600,480), colors[5], -1 )
-    frame = cv2.rectangle(frame, (40,450),(135,480), colors[3], -1 )
+    cv2.rectangle(frame, (40,1), (140,65), (122,122,122), -1)
+    cv2.rectangle(frame, (160,1), (255,65), colors[0], -1)
+    cv2.rectangle(frame, (275,1), (370,65), colors[1], -1)
+    cv2.rectangle(frame, (390,1), (485,65), colors[2], -1)
+    cv2.rectangle(frame, (505,1), (600,65), colors[3], -1)
+    cv2.rectangle(frame, (505,450),(600,480), colors[5], -1 )
+    cv2.rectangle(frame, (40,450),(135,480), colors[3], -1 )
+    cv2.rectangle(frame, (275,450), (370, 480), (255,255,255), -1)
   
-    cv2.putText(frame, "CLEAR ALL", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, "Colour", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, "Size", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, "Exit", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, "Save", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
+    cv2.putText(frame, "CLEAR ALL", (49,33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Colour", (185,33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Size", (298,33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Exit", (420,33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Save", (520,33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
     cv2.putText(frame, "Shape", (520,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[4], 1, cv2.LINE_AA)
     cv2.putText(frame, "FBoard", (55,468), cv2.FONT_HERSHEY_COMPLEX, 0.4, colors[5], 1, cv2.LINE_AA)
+    cv2.putText(frame, "Feature", (288,468), cv2.FONT_HERSHEY_COMPLEX, 0.5,(80, 150, 255), 1, cv2.LINE_AA)
 
     # Identifying the pointer by making its mask
     Mask = cv2.inRange(hsv, Lower_hsv, Upper_hsv)
@@ -571,6 +590,8 @@ while True:
                 blue_index = 0
                 shape = []
                 blank[:,:,:] = 0
+                text = []
+
             elif 160 <= center[0] <= 255:
                     COLIST = True
             elif 275 <= center[0] <= 370:
@@ -592,6 +613,11 @@ while True:
                 if STOP is False:
                     KEY = True
                     STOP = True
+
+            elif 275 <= center[0] <= 370:
+                if STOP is False:
+                    FEATURE=True
+                    STOP=True
 
         elif (COLIST == False and COSIZE == False) and (SAVE == False and STOP == False):
             bpoints[blue_index].appendleft(center)
@@ -671,7 +697,13 @@ while True:
     keyboard()
     locat1()
     locat2()
+    feature()
 
+    """ctime = time.time()
+    fps = 1/(ctime - ptime)
+    ptime = ctime
+    cv2.putText(frame,f'{int(fps)}', (128,78), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0,255,0), 1)
+    """
     var = smart(frame, center)
     if var != None:
         v = var[0]
@@ -681,7 +713,7 @@ while True:
     
     # Show all the windows
     if RECT is False and LOC2 is False:
-        cv2.imshow("Tracking", frame)
+        pass
     elif LOC2 is True and RECT is False:
         pass
     else:
@@ -690,11 +722,16 @@ while True:
             shape.append([xrect, yrect, xmax, ymax,s, colors[colorIndex], v]) 
         draw()
     
+    cv2.imshow("Tracking", frame)
     cv2.imshow("blank", blank)
     cv2.imshow("mask",Mask)
     
     # If the 'q' key is pressed then stop the application 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    # if cv2.waitKey(1) & 0xFF == ord("q"):
+    #     break
+    ###########   NEW   ####################
+    key = cv2.waitKey(1)
+    if key == 27:
         break
 
 if os.path.isfile("C:/Users/suyash/Desktop/KACHRA/laohub/ocv writer.txt") is True:
